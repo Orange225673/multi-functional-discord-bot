@@ -960,6 +960,23 @@ class DatabaseManager {
         return true;
     }
 
+    setGuildMsg(serverId, type, channelId, message) {
+        const colChan = `${type}_channel`; // welcome_channel hoặc leave_channel
+        const colMsg = `${type}_message`;
+
+        const stmt = db.prepare(`
+            INSERT INTO guild_messages (server_id, ${colChan}, ${colMsg})
+            VALUES (?, ?, ?)
+            ON CONFLICT(server_id) DO UPDATE SET ${colChan} = ?, ${colMsg} = ?
+        `);
+        return stmt.run(serverId, channelId, message, channelId, message);
+    }
+
+    getGuildMsgs(serverId) {
+        return db.prepare('SELECT * FROM guild_messages WHERE server_id = ?').get(serverId);
+    }
+
+
 }
 
 console.log('✅ Database manager loaded (WITH GEMS & XP SYSTEM)');

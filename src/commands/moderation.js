@@ -14,6 +14,37 @@ function canManageServer(member, config) {
 }
 
 function setup(client) {
+    // --- Lệnh SETJOIN ---
+    client.commands.set('setjoin', {
+        name: 'setjoin',
+        async execute(message, args, client) {
+            if (!canManageServer(message.member, client.config)) return message.reply("❌ No permission!");
+
+            const channel = message.mentions.channels.first();
+            const content = args.slice(1).join(' ');
+
+            if (!channel || !content) return message.reply("❌ Usage: `%setjoin #channel Welcome {user} to {server}!`");
+
+            dataManager.setGuildMsg(message.guild.id, 'welcome', channel.id, content);
+            return message.reply(`✅ **Welcome message** set to ${channel}.`);
+        }
+    });
+
+    // --- Lệnh SETLEAVE ---
+    client.commands.set('setleave', {
+        name: 'setleave',
+        async execute(message, args, client) {
+            if (!canManageServer(message.member, client.config)) return message.reply("❌ No permission!");
+
+            const channel = message.mentions.channels.first();
+            const content = args.slice(1).join(' ');
+
+            if (!channel || !content) return message.reply("❌ Usage: `%setleave #channel {user} just left us.`");
+
+            dataManager.setGuildMsg(message.guild.id, 'leave', channel.id, content);
+            return message.reply(`✅ **Leave message** set to ${channel}.`);
+        }
+    });
 
     client.commands.set('membercount', {
         name: 'membercount',

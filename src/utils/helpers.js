@@ -28,7 +28,7 @@ function parseTime(timeStr) {
 // Format milliseconds into readable time
 function formatTime(ms) {
     const seconds = Math.floor(ms / 1000);
-    
+
     if (seconds < 60) return `${seconds} seconds`;
     if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes`;
     if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours`;
@@ -120,6 +120,30 @@ function randomChoice(array) {
     return array[Math.floor(Math.random() * array.length)];
 }
 
+/**
+ * The function `formatMsg` replaces placeholders in a string with specific values related to a Discord
+ * server member.
+ * @param str - The `str` parameter is a string that represents a message template which may contain
+ * placeholders like `{user}`, `{user_tag}`, `{server}`, and `{memberCount}`.
+ * @param member - The `member` parameter in the `formatMsg` function represents a member of a Discord
+ * server. It is expected to be an object that contains information about the member, such as their
+ * username, tag, the server they belong to, and the total member count in the server.
+ * @returns The function `formatMsg` takes a string `str` and a `member` object as parameters. It
+ * replaces placeholders in the string with information from the `member` object and returns the
+ * formatted message. The placeholders replaced are:
+ * - `{user}` with the member's name
+ * - `{user_tag}` with the member's tag
+ * - `{server}` with the name of the server the member belongs
+ */
+function formatMsg(str, member) {
+    // For discord server message
+    return str
+        .replace(/{user}/g, `<@${member.id}>`)
+        .replace(/{user_tag}/g, member.user.tag)
+        .replace(/{server}/g, member.guild.name)
+        .replace(/{memberCount}/g, member.guild.memberCount);
+}
+
 console.log('✅ Helper functions loaded');
 
 module.exports = {
@@ -135,5 +159,6 @@ module.exports = {
     isOwner,
     truncate,
     sleep,
-    randomChoice
+    randomChoice,
+    formatMsg
 };

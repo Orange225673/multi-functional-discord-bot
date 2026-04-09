@@ -32,6 +32,7 @@ const pollSystem = require('./systems/pollSystem');
 const reminderSystem = require('./systems/reminderSystem');
 const aiSystem = require('./systems/aiSystem');
 const xpSystem = require('./systems/xpSystem');
+const helpers = require('./utils/helpers');
 
 // Import command
 
@@ -297,7 +298,7 @@ client.on('messageCreate', async (message) => {
         console.error('Chess move error:', error.message);
     }
 });
-// ======================== MESSAGE_DELETE
+// ======================== MESSAGE_DELETE ===================
 client.snipes = new Map();
 client.on('messageDelete', (message) => {
     if (message.partial || message.author?.bot) return; // Bỏ qua tin nhắn cũ hoặc của bot
@@ -319,15 +320,28 @@ client.on('messageDelete', (message) => {
 });
 
 // ============ ON_MEMBER_JOIN EVENT ============
-client.on('guildMemberAdd', (member) => {
+client.on('guildMemberAdd', async (member) => {
     dataManager.updateAnalytics(member.guild.id, 'join', member.guild.memberCount)
     console.log(`👋 ${member.user.tag} joined ${member.guild.name}`);
+
+    const config = dataManager.getGuildMsgs(member.guild.id);
+    if (config?.welcome_channel && config?.welcome_message) {
+        const channel = member.guild.channels.cache.get(config.welcome_channel);
+        if (channel) channel.send(helpers.formatMsg(config.welcome_message, member)).catch(() => { });
+    }
 });
 
 // ============ ON_MEMBER_REMOVE EVENT ============
-client.on('guildMemberRemove', (member) => {
+client.on('guildMemberRemove', async (member) => {
     dataManager.updateAnalytics(member.guild.id, 'leave', member.guild.memberCount);
     console.log(`👋 ${member.user.tag} left ${member.guild.name}`);
+
+    const config = dataManager.getGuildMsgs(member.guild.id);
+    if (config?.leave_channel && config?.leave_message) {
+        const channel = member.guild.channels.cache.get(config.leave_channel);
+        // Lưu ý: member lúc này có thể đã rời đi nên dùng member.user.tag
+        if (channel) channel.send(helpers.formatMsg(config.leave_message, member)).catch(() => { });
+    }
 });
 
 // ============ ON_REACTION_ADD EVENT ============

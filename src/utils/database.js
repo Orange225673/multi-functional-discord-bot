@@ -259,6 +259,16 @@ db.exec(`
         PRIMARY KEY (guild_id, role_id)
     )
 `);
+// Setup guild_message
+db.exec(`
+    CREATE TABLE IF NOT EXISTS guild_messages (
+        server_id TEXT PRIMARY KEY,
+        welcome_channel TEXT,
+        welcome_message TEXT,
+        leave_channel TEXT,
+        leave_message TEXT
+    )
+`);
 
 
 console.log('✅ Database tables initialized');
