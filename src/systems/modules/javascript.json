@@ -1,0 +1,25 @@
+{
+  "description": "Safe Node.js and JavaScript Modules for Sandbox",
+  "modules": [
+    "assert",
+    "buffer",
+    "events",
+    "path",
+    "querystring",
+    "stream",
+    "string_decoder",
+    "timers",
+    "url",
+    "util",
+    "perf_hooks"
+  ],
+  "third_party_available": [
+    "lodash",
+    "moment",
+    "axios",
+    "cheerio",
+    "uuid",
+    "chalk"
+  ],
+  "version": "14.0+"
+}
