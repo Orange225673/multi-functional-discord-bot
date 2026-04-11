@@ -77,6 +77,61 @@ function setup(client) {
         }
     });
 
+    // 🔁 LOOP
+    client.commands.set('loop', {
+        name: 'loop',
+        async execute(message, args) {
+            const queue = music.getQueue(message.guild.id);
+            if (!queue || !queue.playing) {
+                return message.reply("❌ Nothing playing!");
+            }
+
+            const mode = args[0]?.toLowerCase() || 'toggle';
+            let currentLoop = music.getLoop(message.guild.id);
+            let newMode;
+
+            if (mode === 'off' || mode === '0') {
+                newMode = 0;
+            } else if (mode === 'one' || mode === '1') {
+                newMode = 1;
+            } else if (mode === 'all' || mode === '2') {
+                newMode = 2;
+            } else if (mode === 'toggle') {
+                newMode = (currentLoop + 1) % 3;
+            } else {
+                return message.reply("❌ Usage: `%loop [off|one|all|toggle]`");
+            }
+
+            music.setLoop(message.guild.id, newMode);
+            const loopNames = ['🔁 Off', '🔂 Loop One', '🔁 Loop All'];
+            message.reply(`${loopNames[newMode]}`);
+        }
+    });
+
+    // 🔊 VOLUME
+    client.commands.set('volume', {
+        name: 'volume',
+        async execute(message, args) {
+            const queue = music.getQueue(message.guild.id);
+            if (!queue) {
+                return message.reply("❌ Nothing playing!");
+            }
+
+            if (!args[0]) {
+                const vol = music.getVolume(message.guild.id);
+                return message.reply(`🔊 Volume: ${vol}%`);
+            }
+
+            const volume = parseInt(args[0]);
+            if (isNaN(volume) || volume < 1 || volume > 100) {
+                return message.reply("❌ Volume must be 1-100");
+            }
+
+            const newVol = music.setVolume(message.guild.id, volume);
+            message.reply(`🔊 Volume: ${newVol}%`);
+        }
+    });
+
     // 🎵 PLAY
     client.commands.set('play', {
         name: 'play',
@@ -211,5 +266,5 @@ function setup(client) {
         }
     });
 }
-
+console.log("✅ Music commands & systems loaded!")
 module.exports = { setup };

@@ -145,15 +145,15 @@ client.once('ready', async () => {
             server: data.server_id
         });
     });
-    console.log(`✅ Loaded {${afkData.length}} AFK users from Database`);
+    console.log(`✅ Loaded ${afkData.length} AFK users from Database`);
 
     // Preload chess piece images
-    const { preloadPieceImages } = require('./systems/boardRenderer');
+    const { preloadPieceImages } = require('./systems/chessSystems/boardRenderer');
     await preloadPieceImages();
 
     // Generate invite link
     if (config.CLIENT_ID) {
-        const permissions_interger = 8;
+        const permissions_interger = 2841854575373425;
         const inviteLink = `https://discord.com/api/oauth2/authorize?client_id=${config.CLIENT_ID}&permissions=${permissions_interger}&scope=bot%20applications.commands`;
 
         console.log('');
@@ -161,16 +161,13 @@ client.once('ready', async () => {
         console.log('   Click this link to invite the bot to your server:');
         console.log(`   ${inviteLink}`);
         console.log('');
-    }
 
-    // Deploy slash commands if CLIENT_ID is set
-    if (config.CLIENT_ID) {
         await deployCommands();
     }
 
     // Set bot status
     client.user.setActivity(`Watching ${client.guilds.cache.size} server(s)`,
-        { type: ActivityType.Watching });
+        { type: ActivityType.Playing });
 
     // Ensure data folders for all guilds
     client.guilds.cache.forEach(guild => {
@@ -376,7 +373,6 @@ process.on('unhandledRejection', (error) => {
 
 process.on('uncaughtException', (error) => {
     console.error('❌ Uncaught exception:', error);
-    process.exit(1);
 });
 
 // ============ START BOT ============
