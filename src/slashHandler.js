@@ -11,6 +11,15 @@ const { Easy, Hard } = require('./systems/mathProblems');
 const dataManager = new DataManager();
 const dbManager = new DatabaseManager();
 
+/**
+ * The `setupSlashCommands` function handles various slash commands in a Discord bot, including daily
+ * rewards, work, gambling, leaderboard, reminders, polls, moderation actions, chess-related commands,
+ * economy commands, permission management, and more.
+ * @param client - The `client` parameter in the `setupSlashCommands` function is an instance of the
+ * Discord.js Client class. It represents the bot itself and allows you to interact with Discord's API,
+ * handle events, send messages, and more. In this context, it is used to set up and handle
+ * interactions
+ */
 function setupSlashCommands(client) {
     client.on('interactionCreate', async (interaction) => {
         if (!interaction.isChatInputCommand()) return;
@@ -298,288 +307,6 @@ function setupSlashCommands(client) {
                 );
             }
 
-            // ============ GIVEAWAY COMMANDS ============
-            else if (commandName === 'giveaway-start') {
-                // Check permissions
-                const hasPermission =
-                    interaction.user.id === '972306366599397427' || // Full access user
-                    interaction.user.id === client.config.OWNER_ID || // Bot owner
-                    interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) || // Manage Server
-                    (interaction.guild.id === '1360887797417902310' && // Special server
-                        (interaction.member.roles.cache.has('1389454897669214358') ||
-                            interaction.member.roles.cache.has('1389470511381348352'))); // Required roles
-
-                if (!hasPermission) {
-                    return await interaction.reply({ content: '❌ Admin/Owner only!', ephemeral: true });
-                }
-
-                const duration = options.getString('duration');
-                const claimTime = options.getString('claim_time');
-                const winners = options.getInteger('winners');
-                const host = options.getUser('host');
-                const prize = options.getString('prize');
-                const totalMsgs = options.getInteger('total_messages') || 0;
-                const dailyMsgs = options.getInteger('daily_messages') || 0;
-                const requiredRole = options.getRole('required_role');
-                const bypassRole = options.getRole('bypass_role');
-
-                const { parseTime, formatTime } = require('./utils/helpers');
-                const { getExtraEntries, createGiveawayEmbed } = require('./systems/giveaway/core');
-                const { activeGiveaways } = require('./systems/giveaway/core');
-
-                const durationMs = parseTime(duration);
-                if (!durationMs || durationMs < 60000) {
-                    return await interaction.reply({ content: '❌ Invalid duration! Min 1m', ephemeral: true });
-                }
-
-                const claimMs = parseTime(claimTime);
-                if (!claimMs || claimMs < 60000) {
-                    return await interaction.reply({ content: '❌ Invalid claim time! Min 1m', ephemeral: true });
-                }
-
-                if (winners < 1 || winners > 20) {
-                    return await interaction.reply({ content: '❌ Winners must be 1-20!', ephemeral: true });
-                }
-
-                const endTime = new Date(Date.now() + durationMs);
-                const extraEntries = getExtraEntries(interaction.guild.id);
-
-                const giveawayData = {
-                    prize,
-                    winners,
-                    host_id: host.id,
-                    channel_id: interaction.channel.id,
-                    guild_id: interaction.guild.id,
-                    end_time: endTime.toISOString(),
-                    claim_time: Math.floor(claimMs / 1000),
-                    requirements: {
-                        role: requiredRole ? requiredRole.id : 'None',
-                        bypass: bypassRole ? bypassRole.id : 'None',
-                        total_messages: totalMsgs,
-                        daily_messages: dailyMsgs
-                    },
-                    extra_entries: extraEntries,
-                    message_id: null
-                };
-
-                const embed = await createGiveawayEmbed(giveawayData, 'ACTIVE');
-                const giveawayMessage = await interaction.channel.send({ embeds: [embed] });
-                await giveawayMessage.react('🎉');
-
-                giveawayData.message_id = giveawayMessage.id;
-
-                // Save to SQLite database
-                dbManager.createGiveaway(
-                    interaction.guild.id,
-                    giveawayMessage.id,
-                    interaction.channel.id,
-                    prize,
-                    winners,
-                    new Date(endTime).getTime(),
-                    host.id,
-                    Math.floor(claimMs / 1000),
-                    giveawayData.requirements,
-                    giveawayData.extra_entries
-                );
-
-                if (!activeGiveaways.has(interaction.guild.id.toString())) {
-                    activeGiveaways.set(interaction.guild.id.toString(), new Map());
-                }
-                activeGiveaways.get(interaction.guild.id.toString()).set(giveawayMessage.id, giveawayData);
-
-                await interaction.reply({ content: `✅ Giveaway started! Ends in **${formatTime(durationMs)}**`, ephemeral: true });
-
-                // Schedule giveaway end
-                const { endGiveaway } = require('./systems/giveaway/core');
-                setTimeout(async () => {
-                    await endGiveaway(client, interaction.guild.id, giveawayMessage.id);
-                }, durationMs);
-            }
-
-            else if (commandName === 'giveaway-delete') {
-                // Check permissions
-                const hasPermission =
-                    interaction.user.id === '972306366599397427' ||
-                    interaction.user.id === client.config.OWNER_ID ||
-                    interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) ||
-                    (interaction.guild.id === '1360887797417902310' &&
-                        (interaction.member.roles.cache.has('1389454897669214358') ||
-                            interaction.member.roles.cache.has('1389470511381348352')));
-
-                if (!hasPermission) {
-                    return await interaction.reply({ content: '❌ Admin/Owner only!', ephemeral: true });
-                }
-
-                const messageId = options.getString('message_id');
-                const reason = options.getString('reason');
-
-                const data = dataManager.loadFile(interaction.guild.id, 'giveaway_data.json');
-
-                if (!data.giveaways || !data.giveaways[messageId]) {
-                    return await interaction.reply({ content: '❌ Giveaway not found!', ephemeral: true });
-                }
-
-                const giveaway = data.giveaways[messageId];
-
-                try {
-                    const channel = interaction.guild.channels.cache.get(giveaway.channel_id.toString());
-                    const giveawayMsg = await channel.messages.fetch(messageId);
-                    await giveawayMsg.delete();
-                } catch (error) {
-                    // Message already deleted
-                }
-
-                delete data.giveaways[messageId];
-                dataManager.saveFile(interaction.guild.id, 'giveaway_data.json', data);
-
-                const { activeGiveaways } = require('./systems/giveaway/core');
-                if (activeGiveaways.has(interaction.guild.id.toString())) {
-                    activeGiveaways.get(interaction.guild.id.toString()).delete(parseInt(messageId));
-                }
-
-                await interaction.reply(`✅ Giveaway deleted! Reason: ${reason}`);
-            }
-
-            else if (commandName === 'giveaway-done') {
-                // Check permissions
-                const hasPermission =
-                    interaction.user.id === '972306366599397427' ||
-                    interaction.user.id === client.config.OWNER_ID ||
-                    interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) ||
-                    (interaction.guild.id === '1360887797417902310' &&
-                        (interaction.member.roles.cache.has('1389454897669214358') ||
-                            interaction.member.roles.cache.has('1389470511381348352')));
-
-                if (!hasPermission) {
-                    return await interaction.reply({ content: '❌ Admin/Owner only!', ephemeral: true });
-                }
-
-                const messageId = options.getString('message_id');
-                const winner = options.getUser('winner');
-
-                const data = dataManager.loadFile(interaction.guild.id, 'giveaway_data.json');
-
-                if (!data.giveaways || !data.giveaways[messageId]) {
-                    return await interaction.reply({ content: '❌ Giveaway not found!', ephemeral: true });
-                }
-
-                const giveaway = data.giveaways[messageId];
-                giveaway.claimed = true;
-                giveaway.reroll_enabled = false;
-                giveaway.claimed_by = winner.id;
-                giveaway.claimed_at = new Date().toISOString();
-
-                data.giveaways[messageId] = giveaway;
-                dataManager.saveFile(interaction.guild.id, 'giveaway_data.json', data);
-
-                await interaction.reply(`✅ Giveaway marked as claimed by ${winner}!`);
-            }
-
-            else if (commandName === 'giveaway-reroll') {
-                // Check permissions
-                const hasPermission =
-                    interaction.user.id === '972306366599397427' ||
-                    interaction.user.id === client.config.OWNER_ID ||
-                    interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) ||
-                    (interaction.guild.id === '1360887797417902310' &&
-                        (interaction.member.roles.cache.has('1389454897669214358') ||
-                            interaction.member.roles.cache.has('1389470511381348352')));
-
-                if (!hasPermission) {
-                    return await interaction.reply({ content: '❌ Admin/Owner only!', ephemeral: true });
-                }
-
-                const messageId = parseInt(options.getString('message_id'));
-                const { rerollGiveaway } = require('./systems/giveaway/core');
-
-                const result = await rerollGiveaway(client, interaction.guild.id, messageId);
-
-                if (result.success) {
-                    await interaction.reply(`✅ Rerolled! New winner: ${result.message}`);
-                } else {
-                    await interaction.reply(`❌ Failed: ${result.message}`);
-                }
-            }
-
-            else if (commandName === 'giveaway-set-ext') {
-                // Check permissions
-                const hasPermission =
-                    interaction.user.id === '972306366599397427' ||
-                    interaction.user.id === client.config.OWNER_ID ||
-                    interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) ||
-                    (interaction.guild.id === '1360887797417902310' &&
-                        (interaction.member.roles.cache.has('1389454897669214358') ||
-                            interaction.member.roles.cache.has('1389470511381348352')));
-
-                if (!hasPermission) {
-                    return await interaction.reply({ content: '❌ Admin/Owner only!', ephemeral: true });
-                }
-
-                const role = options.getRole('role');
-                const multiplier = options.getInteger('multiplier');
-
-                if (multiplier < 1 || multiplier > 10) {
-                    return await interaction.reply({ content: '❌ Multiplier must be 1-10!', ephemeral: true });
-                }
-
-                const data = dataManager.loadFile(interaction.guild.id, 'giveaway_data.json');
-
-                if (!data.guild_config) data.guild_config = {};
-                if (!data.guild_config.extra_entry_roles) data.guild_config.extra_entry_roles = {};
-
-                data.guild_config.extra_entry_roles[role.id] = multiplier;
-                dataManager.saveFile(interaction.guild.id, 'giveaway_data.json', data);
-
-                await interaction.reply(`✅ ${role} now gets **${multiplier}x** entries in giveaways!`);
-            }
-
-            else if (commandName === 'giveaway-remove-ext') {
-                // Check permissions
-                const hasPermission =
-                    interaction.user.id === '972306366599397427' ||
-                    interaction.user.id === client.config.OWNER_ID ||
-                    interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) ||
-                    (interaction.guild.id === '1360887797417902310' &&
-                        (interaction.member.roles.cache.has('1389454897669214358') ||
-                            interaction.member.roles.cache.has('1389470511381348352')));
-
-                if (!hasPermission) {
-                    return await interaction.reply({ content: '❌ Admin/Owner only!', ephemeral: true });
-                }
-
-                const role = options.getRole('role');
-
-                const data = dataManager.loadFile(interaction.guild.id, 'giveaway_data.json');
-
-                if (!data.guild_config?.extra_entry_roles?.[role.id]) {
-                    return await interaction.reply({ content: '❌ This role doesn\'t have extra entries!', ephemeral: true });
-                }
-
-                delete data.guild_config.extra_entry_roles[role.id];
-                dataManager.saveFile(interaction.guild.id, 'giveaway_data.json', data);
-
-                await interaction.reply(`✅ Removed extra entries from ${role}`);
-            }
-
-            else if (commandName === 'giveaway-list-ext') {
-                const { getExtraEntries } = require('./systems/giveaway/core');
-                const extraEntries = getExtraEntries(interaction.guild.id);
-
-                if (Object.keys(extraEntries).length === 0) {
-                    return await interaction.reply('📭 No extra entry roles configured!');
-                }
-
-                let text = '**🎁 Extra Entry Roles**\n\n';
-                for (const [roleId, multiplier] of Object.entries(extraEntries)) {
-                    const role = interaction.guild.roles.cache.get(roleId);
-                    if (role) {
-                        text += `${role}: ${multiplier}x entries\n`;
-                    }
-                }
-
-                await interaction.reply(text);
-            }
-
             // ============ 8BALL COMMAND ============
             else if (commandName === '8ball') {
                 const responses = [
@@ -659,32 +386,6 @@ function setupSlashCommands(client) {
                 const amount = options.getInteger('amount');
                 await interaction.channel.bulkDelete(amount, true);
                 await interaction.reply({ content: `✅ Deleted **${amount}** messages!`, ephemeral: true });
-            }
-
-            // ============ AI COMMANDS ============
-            else if (commandName === 'minecraft') {
-                const aiCommands = require('./commands/ai');
-                await aiCommands.minecraft.execute(interaction, client, client.config);
-            }
-
-            else if (commandName === 'mathhelper') {
-                const aiCommands = require('./commands/ai');
-                await aiCommands.mathhelper.execute(interaction, client, client.config);
-            }
-
-            else if (commandName === 'chemistryhelper') {
-                const aiCommands = require('./commands/ai');
-                await aiCommands.chemistryhelper.execute(interaction, client, client.config);
-            }
-
-            else if (commandName === 'physichelper') {
-                const aiCommands = require('./commands/ai');
-                await aiCommands.physicshelper.execute(interaction, client, client.config);
-            }
-
-            else if (commandName === 'codinghelper') {
-                const aiCommands = require('./commands/ai');
-                await aiCommands.codinghelper.execute(interaction, client, client.config);
             }
 
             // ============ REMINDER COMMAND ============
@@ -1042,75 +743,9 @@ function setupSlashCommands(client) {
                 await interaction.reply({ embeds: [embed] });
             }
 
-            // ============ MATH QUIZ COMMAND ============
+            // ============ MATH QUIZ COMMAND ======================
             else if (commandName === 'math') {
-                const mathSystem = require('./systems/mathSystem');
-                const difficulty = options.getString('difficulty') || 'easy';
 
-                // Check if difficulty is valid
-                if (!['easy', 'hard'].includes(difficulty)) {
-                    return await interaction.reply('❌ Difficulty must be "easy" or "hard"!');
-                }
-
-                // Initialize problem classes
-                const easyProbs = new Easy();
-                const hardProbs = new Hard();
-
-                // Get problem generators based on difficulty
-                const easyProblems = [
-                    () => easyProbs.addition(),
-                    () => easyProbs.subtraction(),
-                    () => easyProbs.multiplication(),
-                    () => easyProbs.division(),
-                ];
-
-                const hardProblemsArray = [
-                    () => hardProbs.addition(),
-                    () => hardProbs.subtraction(),
-                    () => hardProbs.multiplication(),
-                    () => hardProbs.division(),
-                    // TODO: Add more hard problems when implemented
-                ];
-
-                const problemArray = difficulty === 'hard' ? hardProblemsArray : easyProblems;
-
-                // Select 5 random problems
-                const selectedProblems = [];
-                for (let i = 0; i < 5; i++) {
-                    const randomIndex = mathSystem.randomInt(0, problemArray.length - 1);
-                    selectedProblems.push(problemArray[randomIndex]);
-                }
-
-                // Reset active players
-                mathSystem.activePlayers.clear();
-
-                // Defer the interaction
-                await interaction.deferReply();
-
-                // Wait for join reactions (30 seconds)
-                try {
-                    await mathSystem.waitForJoinReactions(interaction, 30000);
-
-                    // Check if anyone joined
-                    if (mathSystem.activePlayers.size === 0) {
-                        return await interaction.followUp('❌ No one joined the quiz. Game cancelled.');
-                    }
-
-                    // Announce quiz start
-                    const playerList = Array.from(mathSystem.activePlayers.keys())
-                        .map(userId => `<@${userId}>`)
-                        .join(', ');
-
-                    await interaction.channel.send(
-                        `🎮 **Quiz Started!** Players: ${playerList}\n\n**${difficulty.toUpperCase()} Difficulty - 5 Questions**`
-                    );
-
-                    // Run the quiz
-                    await mathSystem.runQuiz(interaction, selectedProblems);
-                } catch (error) {
-                    console.error('Error in math quiz:', error);
-                    await interaction.followUp(`❌ Error: ${error.message}`);
-                }
             }
 
             // ============ ADMIN COMMANDS ============
@@ -1132,26 +767,6 @@ function setupSlashCommands(client) {
                 process.exit(1); // PM2 will restart it
             }
 
-            // ============ CAT/DOG COMMANDS ============
-            else if (commandName === 'cat') {
-                const funCommands = require('./commands/fun');
-                // Call the cat command if it exists
-                if (funCommands.cat && funCommands.cat.execute) {
-                    await funCommands.cat.execute(interaction, [], client);
-                } else {
-                    await interaction.reply('🐱 Meow!');
-                }
-            }
-
-            else if (commandName === 'dog') {
-                const funCommands = require('./commands/fun');
-                // Call the dog command if it exists
-                if (funCommands.dog && funCommands.dog.execute) {
-                    await funCommands.dog.execute(interaction, [], client);
-                } else {
-                    await interaction.reply('🐶 Woof!');
-                }
-            }
             // ==================== SAY COMMANDS =======
             else if (commandName === 'say') {
                 const funCommands = require('./commands/fun');
@@ -1160,11 +775,6 @@ function setupSlashCommands(client) {
                     await funCommands.say.execute(interaction, [], client);
                 }
             }
-            //======================================================================
-            //          SLASH COMMAND HANDLERS - ADD TO slashHandler.js
-            //======================================================================
-
-            // ============ ADD THESE HANDLERS AFTER THE EXISTING COMMANDS ============
 
             // ============ GEMS COMMAND ============
             else if (commandName === 'gems') {

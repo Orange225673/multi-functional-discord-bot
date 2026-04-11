@@ -30,7 +30,6 @@ const economySystem = require('./systems/economySystem');
 const mathSystem = require('./systems/mathSystem');
 const pollSystem = require('./systems/pollSystem');
 const reminderSystem = require('./systems/reminderSystem');
-const aiSystem = require('./systems/aiSystem');
 const xpSystem = require('./systems/xpSystem');
 const helpers = require('./utils/helpers');
 
@@ -42,7 +41,6 @@ const statsCommands = require('./commands/stats');
 const adminCommands = require('./commands/admin');
 const reminderCommands = require('./commands/reminder');
 const pollCommands = require('./commands/poll');
-const aiCommands = require('./commands/ai');
 const economyCommands = require('./commands/economy');
 const chessCommands = require('./commands/chess');
 const minecraftCommands = require('./commands/minecraft');
@@ -54,6 +52,7 @@ const xpCommands = require('./commands/xp');
 const enablexpCommand = require('./commands/enableXP');
 const levelupCommand = require('./commands/levelup');
 const calculatorCommand = require('./commands/calculator');
+const musicCommands = require('./commands/music/commands');
 
 
 // Initialize bot
@@ -65,7 +64,8 @@ const client = new Client({
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessageReactions,
         GatewayIntentBits.GuildScheduledEvents,
-        GatewayIntentBits.GuildPresences
+        GatewayIntentBits.GuildPresences,
+        GatewayIntentBits.GuildVoiceStates
     ]
 });
 
@@ -89,7 +89,6 @@ economySystem.setup(client);
 mathSystem.setup(client);
 pollSystem.setup(client);
 reminderSystem.setup(client);
-aiSystem.setup(client, config);
 xpSystem.setup(client);
 
 console.log('⚙️  Loading commands...');
@@ -102,7 +101,6 @@ adminCommands.setup(client);
 reminderCommands.setup = () => { client.commands.set('remindme', reminderCommands); client.commands.set('remind', reminderCommands); client.commands.set('reminder', reminderCommands); };
 reminderCommands.setup();
 pollCommands.setup(client);
-aiCommands.setup(client);
 economyCommands.setup(client);
 chessCommands.setup(client);
 minecraftCommands.setup(client);
@@ -117,7 +115,7 @@ client.commands.set('levelup', levelupCommand);
 client.commands.set('lvlup', levelupCommand);
 client.commands.set('levelconfig', levelupCommand);
 calculatorCommand.setup(client);
-
+musicCommands.setup(client);
 
 console.log('✅ All systems and commands loaded');
 

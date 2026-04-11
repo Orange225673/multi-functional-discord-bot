@@ -2,7 +2,7 @@
 //                         FUN COMMANDS                               //
 ///////////////////////////////////////////////////////////////////////
 
-const { description } = require('./math');
+const { description, aliases } = require('./math');
 const databaseManager = require('../utils/DatabaseManager');
 const { EmbedBuilder } = require('discord.js');
 
@@ -261,6 +261,7 @@ function setup(client, afkUsers) {
     // ============ IQTEST COMMAND ============
     client.commands.set('iqtest', {
         name: 'iqtest',
+        aliases: ['iq'],
         description: 'Test IQ',
         async execute(message, args, client) {
             const user = message.mentions.users.first() || message.author;
@@ -292,6 +293,7 @@ function setup(client, afkUsers) {
             await message.reply(`${emoji} **${user.username}**'s IQ is **${iq}** ${comment}`);
         }
     });
+    client.commands.set('iq', client.commands.get('iqtest'));
 
     // ============ SHIP COMMAND ============
     client.commands.set('ship', {
@@ -334,64 +336,6 @@ function setup(client, afkUsers) {
             );
         }
     });
-
-
-    // ============ HELP COMMAND ============
-    client.commands.set('help', {
-        name: 'help',
-        aliases: ['commands'],
-        description: 'Show all commands',
-        async execute(message, args, client) {
-            const { EmbedBuilder } = require('discord.js');
-
-            const embed = new EmbedBuilder()
-                .setTitle('📚 Bot Commands')
-                .setDescription(`Prefix: \`${client.config.COMMAND_PREFIX}\``)
-                .setColor(0x00D4FF)
-                .addFields(
-                    {
-                        name: '💰 Economy',
-                        value: '`balance`, `daily`, `work`, `gamble`, `give`, `leaderboard`',
-                        inline: false
-                    },
-                    {
-                        name: '📊 Stats',
-                        value: '`me`, `toptotal`, `topdaily`',
-                        inline: false
-                    },
-                    {
-                        name: '🧮 Math',
-                        value: '`math <easy|medium|hard>`',
-                        inline: false
-                    },
-                    {
-                        name: '📊 Polls',
-                        value: '`poll <question> | <option1> | <option2> ...`',
-                        inline: false
-                    },
-                    {
-                        name: '🎉 Fun',
-                        value: '`ping`, `8ball`, `roll`, `flip`, `say`, `cat`, `dog`, `gayrate`, `iqtest`, `ship`',
-                        inline: false
-                    },
-                    {
-                        name: '⏰ Utility',
-                        value: '`remind <time> <message>`, `afk <reason>',
-                        inline: false
-                    },
-                    {
-                        name: '🔨 Moderation',
-                        value: '`kick`, `ban`, `timeout`, `clear`',
-                        inline: false
-                    }
-                )
-                .setFooter({ text: `Requested by ${message.author.username}` });
-
-            await message.reply({ embeds: [embed] });
-        }
-    });
-
-    client.commands.set('commands', client.commands.get('help'));
 
     console.log('✅ Fun commands loaded');
 }

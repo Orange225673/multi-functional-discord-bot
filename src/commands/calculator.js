@@ -77,12 +77,12 @@ function setup(client) {
                     .setColor(0x00D4FF)
                     .addFields(
                         {
-                            name: '📝 Input',
+                            name: '**Input**',
                             value: `\`\`\`${equation}\`\`\``,
                             inline: false
                         },
                         {
-                            name: '✅ Result',
+                            name: '**Result**',
                             value: `\`\`\`${result.toString()}\`\`\``,
                             inline: false
                         }
@@ -126,12 +126,12 @@ function setup(client) {
                     .setColor(0xFF0000)
                     .addFields(
                         {
-                            name: '📝 Your Input',
+                            name: '**Input**',
                             value: `\`\`\`${equation}\`\`\``,
                             inline: false
                         },
                         {
-                            name: '⚠️ Error',
+                            name: '**Error**',
                             value: errorMessage,
                             inline: false
                         }
