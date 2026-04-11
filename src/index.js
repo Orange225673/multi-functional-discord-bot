@@ -35,21 +35,21 @@ const helpers = require('./utils/helpers');
 
 // Import command
 
-const funCommands = require('./commands/fun');
-const moderationCommands = require('./commands/moderation');
-const statsCommands = require('./commands/stats');
+const funCommands = require('./commands/funcom/fun');
+const moderationCommands = require('./commands/moderator/moderation');
+const statsCommands = require('./commands/economy/stats');
 const adminCommands = require('./commands/admin');
 const reminderCommands = require('./commands/reminder');
 const pollCommands = require('./commands/poll');
-const economyCommands = require('./commands/economy');
+const economyCommands = require('./commands/economy/economy');
 const chessCommands = require('./commands/chess');
 const minecraftCommands = require('./commands/minecraft');
-const permissionCommands = require('./commands/permissions');
+const permissionCommands = require('./commands/moderator/permissions');
 const codeCommands = require('./commands/code');
-const mathCommands = require('./commands/math');
-const gemsCommands = require('./commands/gems');
-const xpCommands = require('./commands/xp');
-const enablexpCommand = require('./commands/enableXP');
+const mathCommands = require('./commands/math/math');
+const gemsCommands = require('./commands/economy/gems');
+const xpCommands = require('./commands/economy/xp');
+const enablexpCommand = require('./commands/economy/enableXP');
 const levelupCommand = require('./commands/levelup');
 const calculatorCommand = require('./commands/calculator');
 const musicCommands = require('./commands/music/commands');
@@ -91,6 +91,10 @@ pollSystem.setup(client);
 reminderSystem.setup(client);
 xpSystem.setup(client);
 
+// Initialize music player
+const { initializePlayer } = require('./utils/musicPlayer/musicService');
+initializePlayer(client);
+
 console.log('⚙️  Loading commands...');
 
 // Load commands
@@ -98,7 +102,11 @@ funCommands.setup(client, afkUsers);
 moderationCommands.setup(client);
 statsCommands.setup(client);
 adminCommands.setup(client);
-reminderCommands.setup = () => { client.commands.set('remindme', reminderCommands); client.commands.set('remind', reminderCommands); client.commands.set('reminder', reminderCommands); };
+reminderCommands.setup = () => {
+    client.commands.set('remindme', reminderCommands);
+    client.commands.set('remind', reminderCommands);
+    client.commands.set('reminder', reminderCommands);
+};
 reminderCommands.setup();
 pollCommands.setup(client);
 economyCommands.setup(client);
@@ -183,20 +191,22 @@ client.on('guildCreate', async (guild) => {
 
     // Send DM to the server owner
     try {
-        const owner = guild.members.cache.get(guild.ownerId) || await guild.fetchOwner();
-        if (owner) {
-
+        // Fetch owner from User API (more reliable than member cache)
+        const ownerUser = await client.users.fetch(guild.ownerId);
+        if (ownerUser) {
             const embed = new EmbedBuilder()
-                .setTitle('Bot Added to Your Server!')
+                .setTitle('🎉 Bot Added to Your Server!')
                 .setDescription(`Thanks for inviting me to **${guild.name}**!`)
                 .setColor(0xe94560)
 
-            await owner.send({ embeds: [embed] });
+            await ownerUser.send({ embeds: [embed] });
+            console.log(`✅ DM sent to server owner: ${ownerUser.tag}`);
         }
     } catch (error) {
-        console.error(`❌ Could not DM owner:`, error.message);
+        console.warn(`⚠️ Could not DM owner (${guild.ownerId}):`, error.message);
     }
 });
+
 
 // ============ ON_MESSAGE EVENT ============
 client.on('messageCreate', async (message) => {

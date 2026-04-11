@@ -2,8 +2,7 @@
 //                         FUN COMMANDS                               //
 ///////////////////////////////////////////////////////////////////////
 
-const { description, aliases } = require('./math');
-const databaseManager = require('../utils/DatabaseManager');
+const databaseManager = require('../../utils/DatabaseManager');
 const { EmbedBuilder } = require('discord.js');
 
 const dataManager = new databaseManager();
@@ -202,7 +201,7 @@ function setup(client, afkUsers) {
             const DOG_API_KEY = process.env.DOG_API_KEY;
 
             if (!DOG_API_KEY) {
-                return message.reply('❌ Dog API key is not configured! Please add DOG_API_KEY to .env file.');
+                return message.reply('❌ Dog API key is not configured!');
             }
 
             try {

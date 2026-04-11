@@ -3,9 +3,9 @@
 ///////////////////////////////////////////////////////////////////////
 
 const { PermissionFlagsBits, EmbedBuilder, ButtonStyle, ButtonBuilder, ComponentType, ActionRowBuilder, AttachmentBuilder, PermissionsBitField } = require('discord.js');
-const { parseTime } = require('../utils/helpers');
+const { parseTime } = require('../../utils/helpers');
 const { createCanvas } = require('@napi-rs/canvas');
-const DatabaseManager = require("../utils/DatabaseManager");
+const DatabaseManager = require("../../utils/DatabaseManager");
 const dataManager = new DatabaseManager();
 
 // Helper function to check if user is owner or has ManageGuild permission

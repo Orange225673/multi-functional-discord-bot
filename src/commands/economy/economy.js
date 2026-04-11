@@ -3,8 +3,8 @@
 //======================================================================
 
 const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
-const { ECONOMY_CONFIG, checkCooldown } = require('../systems/economySystem');
-const DatabaseManager = require('../utils/DatabaseManager');
+const { ECONOMY_CONFIG, checkCooldown } = require('../../systems/economySystem');
+const DatabaseManager = require('../../utils/DatabaseManager');
 
 const dbManager = new DatabaseManager();
 

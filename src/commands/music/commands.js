@@ -83,7 +83,7 @@ function setup(client) {
         async execute(message, args) {
             const query = args.join(' ').trim();
             if (!query) {
-                return message.reply('❌ Usage: `%play <keyword or link>``');
+                return message.reply('❌ Usage: `%play <keyword or link>`');
             }
 
             if (!message.member.voice.channel) {
@@ -143,20 +143,6 @@ function setup(client) {
                                 tracks = await searchService.searchBySource(query, source, 10);
                             }
 
-                            if (i.customId === 'music_src_spotify') {
-                                source = 'spotify';
-                                page = 0;
-                                selectedIndex = 0;
-                                tracks = await searchService.searchBySource(query, source, 10);
-                            }
-
-                            if (i.customId === 'music_src_other') {
-                                source = 'other';
-                                page = 0;
-                                selectedIndex = 0;
-                                tracks = await searchService.searchBySource(query, source, 10);
-                            }
-
                             if (i.customId === 'music_play') {
                                 const track = getSelectedTrack(tracks, selectedIndex);
                                 if (!track) {
@@ -164,12 +150,26 @@ function setup(client) {
                                     return;
                                 }
 
+                                // Defer the interaction immediately to prevent timeout
+                                await i.deferUpdate();
+
                                 const song = await music.addSong(message, track.url);
-                                await i.update({
-                                    content: `🎶 Added to queue: **${song.title}**`,
-                                    embeds: [],
-                                    components: []
-                                });
+                                if (!song) {
+                                    // addSong already sent an error message
+                                    return collector.stop('failed');
+                                }
+
+                                // Edit the original message (deferred)
+                                try {
+                                    await i.editReply({
+                                        content: `🎶 Added to queue: **${song.title}**`,
+                                        embeds: [],
+                                        components: []
+                                    });
+                                } catch (err) {
+                                    console.warn("Could not edit deferred reply:", err.message);
+                                }
+
                                 return collector.stop('played');
                             }
 

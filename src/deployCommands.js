@@ -5,8 +5,8 @@
 const { REST, Routes } = require('discord.js');
 const config = require('./config');
 const { description } = require('./commands/reminder');
-const gemsCommands = require('./commands/gems');
-const xpCommands = require('./commands/xp');
+const gemsCommands = require('./commands/economy/gems');
+const xpCommands = require('./commands/economy/xp');
 
 // Define all slash commands
 const commands = [

@@ -2,7 +2,7 @@
 //                    PERMISSION COMMANDS
 //======================================================================
 
-const PermissionManager = require('../systems/permissionManager');
+const PermissionManager = require('../../systems/permissionManager');
 const { EmbedBuilder } = require('discord.js');
 
 const permManager = new PermissionManager();

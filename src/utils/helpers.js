@@ -167,6 +167,19 @@ function ordinal(n) {
     }
 }
 
+function parseCookies(txt) {
+    return txt
+        .split('\n')
+        .filter(line => line && !line.startsWith('#'))
+        .map(line => {
+            const parts = line.split('\t');
+            if (parts.length < 7) return null;
+            return `${parts[5]}=${parts[6]}`;
+        })
+        .filter(Boolean)
+        .join('; ');
+}
+
 console.log('✅ Helper functions loaded');
 
 module.exports = {
@@ -184,5 +197,6 @@ module.exports = {
     sleep,
     randomChoice,
     formatMsg,
-    ordinal
+    ordinal,
+    parseCookies
 };

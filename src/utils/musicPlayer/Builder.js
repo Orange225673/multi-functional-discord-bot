@@ -7,6 +7,7 @@ const {
     EmbedBuilder,
     StringSelectMenuBuilder
 } = require('discord.js');
+const PAGE_SIZE = 5;
 
 function buildEmbed(query, source, tracks, page, selectedIndex) {
     const start = page * PAGE_SIZE;
@@ -37,16 +38,8 @@ function buildSourceRow(source) {
         new ButtonBuilder()
             .setCustomId('music_src_youtube')
             .setLabel('YouTube')
-            .setStyle(source === 'youtube' ? ButtonStyle.Success : ButtonStyle.Secondary),
-        new ButtonBuilder()
-            .setCustomId('music_src_spotify')
-            .setLabel('Spotify')
-            .setStyle(source === 'spotify' ? ButtonStyle.Success : ButtonStyle.Secondary),
-        new ButtonBuilder()
-            .setCustomId('music_src_other')
-            .setLabel('Other')
-            .setStyle(source === 'other' ? ButtonStyle.Success : ButtonStyle.Secondary)
-    );
+            .setStyle(source === 'youtube' ? ButtonStyle.Success : ButtonStyle.Secondary)
+    )
 }
 
 function buildNavRow(page, tracks) {
@@ -81,7 +74,7 @@ function buildSelectMenu(tracks, page, selectedIndex) {
     return new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
             .setCustomId('music_pick')
-            .setPlaceholder('Chọn một bài hát...')
+            .setPlaceholder('Select a song/video...')
             .addOptions(
                 pageItems.map((t, i) => {
                     const realIndex = start + i;

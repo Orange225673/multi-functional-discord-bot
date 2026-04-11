@@ -13,15 +13,15 @@ const {
     acceptDraw,
     getGameByPlayer,
     formatTime
-} = require('../systems/chessManager');
-const { renderBoard } = require('../systems/boardRenderer');
+} = require('../systems/chessSystems/chessManager');
+const { renderBoard } = require('../systems/chessSystems/boardRenderer');
 const {
     updateElo,
     getServerLeaderboard,
     getGlobalLeaderboard,
     getPlayerStats,
     PROVISIONAL_GAMES
-} = require('../systems/chessElo');
+} = require('../systems/chessSystems/chessElo');
 
 function setup(client) {
     // ============ CHESS START COMMAND ============

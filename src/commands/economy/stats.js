@@ -3,9 +3,9 @@
 ///////////////////////////////////////////////////////////////////////
 
 const { EmbedBuilder } = require('discord.js');
-const { formatNumber } = require('../utils/helpers');
-const DataManager = require('../utils/dataManager');
-const DatabaseManager = require('../utils/DatabaseManager');
+const { formatNumber } = require('../../utils/helpers');
+const DataManager = require('../../utils/dataManager');
+const DatabaseManager = require('../../utils/DatabaseManager');
 
 const dataManager = new DataManager();
 const dbManager = new DatabaseManager();

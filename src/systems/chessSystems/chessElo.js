@@ -2,7 +2,7 @@
 //                    CHESS ELO RATING SYSTEM
 //======================================================================
 
-const DataManager = require('../utils/dataManager');
+const DataManager = require('../../utils/dataManager');
 const dataManager = new DataManager();
 
 // ELO Constants
