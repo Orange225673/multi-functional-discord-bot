@@ -161,7 +161,7 @@ function setup(client) {
             const newNickname = args.slice(1).join(' ').trim() // Skip the mention, take the rest
 
             if (!targetMember) {
-                return message.reply('❌ Please mention a member! Usage: `!setnick @user New Name`');
+                return message.reply('❌ Please mention a member! Usage: `%setnick @user New Name`');
             }
 
             if (!newNickname) {
@@ -437,7 +437,7 @@ function setup(client) {
 
                 ctx.fillStyle = 'rgba(255,255,255,0.70)';
                 ctx.font = '13px sans-serif';
-                drawText(ctx, `Last ${rows.length} days • Join vs Leave`, paddingLeft, 58);
+                drawText(ctx, `Last ${rows.length} days • Join & Leave`, paddingLeft, 58);
 
                 // ===== SCALE =====
                 const maxValue = Math.max(
@@ -488,7 +488,7 @@ function setup(client) {
                 };
 
                 // ===== LEGEND =====
-                const legendY = 26;
+                const legendY = 70;
 
                 const legendItem = (x, color, label) => {
                     ctx.fillStyle = color;

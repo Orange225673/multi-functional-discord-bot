@@ -141,7 +141,30 @@ function formatMsg(str, member) {
         .replace(/{user}/g, `<@${member.id}>`)
         .replace(/{user_tag}/g, member.user.tag)
         .replace(/{server}/g, member.guild.name)
-        .replace(/{memberCount}/g, member.guild.memberCount);
+        .replace(/{memberCount}/g, member.guild.memberCount)
+        .replace(/{memberCount_ordinal}/g, ordinal(member.guild.memberCount));
+}
+
+/**
+ * The ordinal function in JavaScript returns the ordinal suffix (st, nd, rd, th) for a given number.
+ * @param n - The function `ordinal(n)` takes a number `n` as input and returns the ordinal
+ * representation of that number. For example, if `n` is 1, the function will return "1st", if `n` is
+ * 2, it will return "2nd", and so on
+ * @returns The `ordinal` function takes a number `n` as input and returns the ordinal representation
+ * of that number. For example, if `n` is 1, it will return "1st", if `n` is 2, it will return "2nd",
+ * if `n` is 3, it will return "3rd", and for all other cases, it will return the
+ */
+function ordinal(n) {
+    const mod100 = n % 100;
+
+    if (mod100 >= 11 && mod100 <= 13) return n + "th";
+
+    switch (n % 10) {
+        case 1: return n + "st";
+        case 2: return n + "nd";
+        case 3: return n + "rd";
+        default: return n + "th";
+    }
 }
 
 console.log('✅ Helper functions loaded');
@@ -160,5 +183,6 @@ module.exports = {
     truncate,
     sleep,
     randomChoice,
-    formatMsg
+    formatMsg,
+    ordinal
 };

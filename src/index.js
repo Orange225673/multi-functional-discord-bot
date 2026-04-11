@@ -339,7 +339,6 @@ client.on('guildMemberRemove', async (member) => {
     const config = dataManager.getGuildMsgs(member.guild.id);
     if (config?.leave_channel && config?.leave_message) {
         const channel = member.guild.channels.cache.get(config.leave_channel);
-        // Lưu ý: member lúc này có thể đã rời đi nên dùng member.user.tag
         if (channel) channel.send(helpers.formatMsg(config.leave_message, member)).catch(() => { });
     }
 });
