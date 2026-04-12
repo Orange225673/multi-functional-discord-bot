@@ -4,7 +4,7 @@ chcp 65001 > nul
 echo Starting Discord Bot...
 echo.
 
-node --expose-gc main
+node main
 
 if %errorlevel% neq 0 (
     echo Error detected.

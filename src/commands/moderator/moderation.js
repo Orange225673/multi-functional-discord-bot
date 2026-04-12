@@ -20,13 +20,26 @@ function setup(client) {
         async execute(message, args, client) {
             if (!canManageServer(message.member, client.config)) return message.reply("❌ No permission!");
 
-            const channel = message.mentions.channels.first();
-            const content = args.slice(1).join(' ');
+            // If no args provided, reset the join message
+            if (!args[0]) {
+                dataManager.setGuildMsg(message.guild.id, 'welcome', null, null);
+                return message.reply(`✅ **Welcome message** has been reset.`);
+            }
 
-            if (!channel || !content) return message.reply("❌ Usage: `%setjoin #channel Welcome {user} to {server}!`");
+            // If "none" is passed, reset the join message
+            if (args[0].toLowerCase() === 'none') {
+                dataManager.setGuildMsg(message.guild.id, 'welcome', null, null);
+                return message.reply(`✅ **Welcome message** has been disabled.`);
+            }
+
+            const channel = message.mentions.channels.first();
+            if (!channel) return message.reply("❌ Usage: `%setjoin #channel [message]` or `%setjoin none` to disable");
+
+            // Message is optional - if provided, use it; otherwise just set channel
+            const content = args.slice(1).join(' ') || null;
 
             dataManager.setGuildMsg(message.guild.id, 'welcome', channel.id, content);
-            return message.reply(`✅ **Welcome message** set to ${channel}.`);
+            return message.reply(`✅ **Welcome message** set to ${channel}${content ? '.\nMessage: ' + content : ' (no custom message).'}`);
         }
     });
 
@@ -36,13 +49,26 @@ function setup(client) {
         async execute(message, args, client) {
             if (!canManageServer(message.member, client.config)) return message.reply("❌ No permission!");
 
-            const channel = message.mentions.channels.first();
-            const content = args.slice(1).join(' ');
+            // If no args provided, reset the leave message
+            if (!args[0]) {
+                dataManager.setGuildMsg(message.guild.id, 'leave', null, null);
+                return message.reply(`✅ **Leave message** has been reset.`);
+            }
 
-            if (!channel || !content) return message.reply("❌ Usage: `%setleave #channel {user} just left us.`");
+            // If "none" is passed, reset the leave message
+            if (args[0].toLowerCase() === 'none') {
+                dataManager.setGuildMsg(message.guild.id, 'leave', null, null);
+                return message.reply(`✅ **Leave message** has been disabled.`);
+            }
+
+            const channel = message.mentions.channels.first();
+            if (!channel) return message.reply("❌ Usage: `%setleave #channel [message]` or `%setleave none` to disable");
+
+            // Message is optional - if provided, use it; otherwise just set channel
+            const content = args.slice(1).join(' ') || null;
 
             dataManager.setGuildMsg(message.guild.id, 'leave', channel.id, content);
-            return message.reply(`✅ **Leave message** set to ${channel}.`);
+            return message.reply(`✅ **Leave message** set to ${channel}${content ? '.\nMessage: ' + content : ' (no custom message).'}`);
         }
     });
 

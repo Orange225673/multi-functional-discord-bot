@@ -125,7 +125,7 @@ async function playNext(queue) {
                         }
 
                         if (!info || !info.url) {
-                            throw new Error(lastErr || 'youtube-dl-exec: No stream URL returned');
+                            throw new Error(lastErr || 'youtube-dl-exec: No playable stream');
                         }
 
                         const directUrl = info.url;
@@ -211,21 +211,29 @@ async function playNext(queue) {
                         ffmpegProcess.on('exit', (code) => {
                             ffmpegProcesses.delete(ffmpegProcess);
                             queue.ffmpegProcess = null;
-                            if (code !== 0 && code !== null) {
-                                console.error(`❌ FFmpeg exited with code ${code}`);
-                                if (!ffmpegError) {
-                                    ffmpegError = new Error(`FFmpeg exited with code ${code}`);
+                            // Don't log exit codes - FFmpeg exits for various reasons
+                            // Only set error state if player is still active
+                            if (code !== 0 && code !== null && queue.playing) {
+                                // FFmpeg crashed while playing - stop the player to move to next song
+                                try {
+                                    queue.player.stop();
+                                } catch (e) {
+                                    // Already stopped
                                 }
                             }
                         });
 
-                        // Pipe with error handling
+                        // Pipe with error handling - gracefully handle stream errors
                         audioStream.on('error', (err) => {
-                            console.error('❌ Audio stream error:', err.message);
-                            ffmpegProcess.stdin?.destroy();
-                            ffmpegProcess.kill();
-                            ffmpegProcesses.delete(ffmpegProcess);
-                            throw err;
+                            // Log but don't throw - let the stream end normally
+                            // The FFmpeg will handle any data that was piped before the error
+                            if (err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT') {
+                                console.warn(`⚠️ Audio stream disconnected (${err.code})`);
+                            } else {
+                                console.warn(`⚠️ Audio stream error: ${err.message}`);
+                            }
+                            // Signal end of input to FFmpeg gracefully
+                            ffmpegProcess.stdin?.end?.();
                         });
 
                         ffmpegProcess.stdin?.on('error', (err) => {
@@ -268,9 +276,10 @@ async function playNext(queue) {
                         try {
                             audioStream.pipe(ffmpegProcess.stdin);
                         } catch (pipeErr) {
+                            console.warn('⚠️ Pipe error:', pipeErr.message);
                             ffmpegProcess.kill();
                             ffmpegProcesses.delete(ffmpegProcess);
-                            throw new Error('Failed to pipe audio to ffmpeg: ' + pipeErr.message);
+                            // Don't throw - let next method try
                         }
 
                         // CRITICAL: Use FFmpeg output (PCM) as the audio stream, not the input
@@ -285,7 +294,7 @@ async function playNext(queue) {
                     console.log(`⚠️ Trying fallback #1: play-dl.stream()`);
                     try {
                         stream = await play.stream(streamUrl);
-                        if (!stream) throw new Error('play-dl returned null stream');
+                        if (!stream) throw new Error('play-dl returned null');
                     } catch (fallbackErr) {
                         console.warn(`❌ play-dl fallback failed:`, fallbackErr.message);
                         throw fallbackErr;
@@ -387,35 +396,32 @@ async function playNext(queue) {
             }
         }
 
-        throw lastError;
+        console.warn("⚠️ Could not extract audio from this video");
+        queue.tracks.shift();
+        return playNext(queue);
 
     } catch (err) {
-        console.error("❌ Play error:", err.message);
+        console.warn("⚠️ Play error:", err.message);
         queue.tracks.shift();
-        playNext(queue);
+        return playNext(queue);
     }
 }
 
-// Handle uncaught rejections & ECONNRESET gracefully
-process.on('unhandledRejection', (reason, promise) => {
-    if (reason?.code === 'ECONNRESET' || reason?.message?.includes('ECONNRESET')) {
-        console.warn('⚠️ Network error (ECONNRESET) ignored - retrying next source');
-        return;
-    }
-    if (reason?.code === 'EPIPE' || reason?.message?.includes('EPIPE')) {
-        console.warn('⚠️ FFmpeg pipe error (EPIPE) ignored');
-        return;
-    }
-    if (reason?.code === 'ERR_STREAM_PREMATURE_CLOSE' || reason?.message?.includes('Premature close')) {
-        // Expected when skipping - silently ignore
-        return;
-    }
-    console.error('❌ Unhandled rejection:', reason);
+process.on('unhandledRejection', (reason) => {
+    const msg = reason?.message || reason?.code || String(reason);
+    // Silently ignore all expected network/stream errors
+    if (msg.includes('ECONNRESET') || msg.includes('ETIMEDOUT') || msg.includes('ECONNREFUSED')) return;
+    if (msg.includes('EPIPE') || msg.includes('aborted')) return;
+    if (msg.includes('Premature close') || msg.includes('Destroyed')) return;
+    // Ignore unknown errors - don't spam console
 });
 
-process.on('unhandledExceptions', (err) => {
-    return err;
-})
+process.on('uncaughtException', (err) => {
+    const msg = err?.message || String(err);
+    if (msg.includes('ECONNRESET') || msg.includes('EPIPE') || msg.includes('aborted')) return;
+    if (msg.includes('Premature close')) return;
+    // Prevent hard crash
+});
 
 async function createQueue(message) {
     const guildId = message.guild.id;
@@ -603,33 +609,23 @@ async function addSong(message, url) {
 function skip(guildId) {
     const queue = queues.get(guildId);
     if (!queue || !queue.playing) return false;
-    
-    // Properly cleanup streams before killing FFmpeg
+
+    // Stop player immediately
+    queue.player.stop();
+
+    // Kill FFmpeg process if running
     if (queue.ffmpegProcess) {
         try {
-            // Close stdin gracefully (signal FFmpeg to finish)
-            queue.ffmpegProcess.stdin?.end?.();
-            
-            // Destroy stdout to signal EOF to encoder
-            queue.ffmpegProcess.stdout?.destroy?.();
-            
-            // Give encoder 100ms to finish gracefully
-            setTimeout(() => {
-                if (queue.ffmpegProcess) {
-                    try {
-                        queue.ffmpegProcess.kill('SIGTERM');
-                        ffmpegProcesses.delete(queue.ffmpegProcess);
-                        queue.ffmpegProcess = null;
-                    } catch (e) { }
-                }
-            }, 100);
+            // Just send SIGTERM - don't destroy streams
+            queue.ffmpegProcess.kill('SIGTERM');
+            ffmpegProcesses.delete(queue.ffmpegProcess);
+            queue.ffmpegProcess = null;
         } catch (e) {
             ffmpegProcesses.delete(queue.ffmpegProcess);
             queue.ffmpegProcess = null;
         }
     }
-    
-    queue.player.stop();
+
     return true;
 }
 

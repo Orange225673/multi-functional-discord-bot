@@ -46,8 +46,8 @@ function startBot() {
     console.log('🚀 Starting Discord bot...');
     console.log('');
 
-    // Spawn bot process
-    botProcess = spawn('node', ['src/index.js'], {
+    // Spawn bot process with garbage collection exposure for memory monitoring
+    botProcess = spawn('node', ['-expose-gc', 'src/index.js'], {
         stdio: ['inherit', 'inherit', 'inherit']
     });
 
