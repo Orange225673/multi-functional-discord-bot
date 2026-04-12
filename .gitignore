@@ -22,10 +22,10 @@ lib-cov
 coverage
 *.lcov
 cookies.txt
-.zip
-.rar
-.tar
-.gz
+*.zip
+*.rar
+*.tar
+*.gz
 
 # nyc test coverage
 .nyc_output
@@ -49,6 +49,7 @@ data/
 .idea/
 .vscode/
 package-lock.json
+bak/
 
 
 # Snowpack dependency directory (https://snowpack.dev/)
@@ -125,9 +126,9 @@ dist
 
 # DynamoDB Local files
 .dynamodb/
-.db
-.db-wal
-.db-shm
+*.db
+*.db-wal
+*.db-shm
 
 # Firebase cache directory
 .firebase/
@@ -153,4 +154,4 @@ vite.config.ts.timestamp-*
 
 # Random
 all_contents.txt
-.ps1
+*.ps1
