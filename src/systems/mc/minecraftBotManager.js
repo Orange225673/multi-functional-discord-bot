@@ -205,7 +205,7 @@ class MinecraftBot {
 class MinecraftBotManager {
     constructor() {
         this.bots = new Map();
-        this.dataPath = path.join(__dirname, '../data/minecraft_bots.json');
+        this.dataPath = path.join(__dirname, '../../data/minecraft_bots.json');
         this.statusCallback = null;
         this.ensureDataFile();
         this.loadBots();

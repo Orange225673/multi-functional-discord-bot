@@ -3,7 +3,7 @@
 //======================================================================
 
 const { SlashCommandBuilder } = require('discord.js');
-const { parseTime, loadReminders, saveReminders, sendReminder, activeReminders } = require('../systems/reminderSystem');
+const { parseTime, loadReminders, saveReminders, sendReminder, activeReminders } = require('../systems/misc/reminderSystem');
 
 module.exports = {
   name: 'remindme',

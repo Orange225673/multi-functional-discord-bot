@@ -167,14 +167,28 @@ function ordinal(n) {
     }
 }
 
+
+/**
+ * The function `parseCookies` takes a text input containing cookie data in Netscape format, parses it,
+ * and returns a string of key-value pairs formatted for HTTP cookies.
+ * @param txt - The `parseCookies` function takes a string `txt` as input, which is expected to contain
+ * cookie data in Netscape format. The function parses this input string to extract and format the
+ * cookie name-value pairs.
+ * @returns The `parseCookies` function takes a string input `txt` containing cookie data separated by
+ * newlines. It parses the input, filters out comments and empty lines, extracts the cookie name and
+ * value from each line, and returns a string with all the cookie name-value pairs joined by semicolons
+ * and spaces.
+ */
 function parseCookies(txt) {
     return txt
         .split('\n')
+        .map(line => line.trim())
         .filter(line => line && !line.startsWith('#'))
         .map(line => {
             const parts = line.split('\t');
             if (parts.length < 7) return null;
-            return `${parts[5]}=${parts[6]}`;
+            // Netscape format: Name là index 5, Value là index 6
+            return `${parts[5].trim()}=${parts[6].trim()}`;
         })
         .filter(Boolean)
         .join('; ');

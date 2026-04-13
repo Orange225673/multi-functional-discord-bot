@@ -2,7 +2,7 @@
 //                    MINECRAFT BOT COMMANDS
 //======================================================================
 
-const MinecraftBotManager = require('../systems/minecraftBotManager');
+const MinecraftBotManager = require('../systems/mc/minecraftBotManager');
 
 const mcBotManager = new MinecraftBotManager();
 

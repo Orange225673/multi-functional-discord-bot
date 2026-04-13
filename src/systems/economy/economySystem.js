@@ -3,8 +3,8 @@
 //======================================================================
 
 const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
-const DatabaseManager = require('../utils/DatabaseManager');
-const config = require('../config');
+const DatabaseManager = require('../../utils/DatabaseManager');
+const config = require('../../config');
 
 const dbManager = new DatabaseManager();
 

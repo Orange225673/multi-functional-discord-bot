@@ -3,7 +3,7 @@
 ///////////////////////////////////////////////////////////////////////
 
 const CodeValidator = require('../utils/codeValidator');
-const CodeExecutor = require('../systems/codeExecutor');
+const CodeExecutor = require('../systems/code/codeExecutor');
 const fs = require('fs');
 const path = require('path');
 const { EmbedBuilder } = require('discord.js');

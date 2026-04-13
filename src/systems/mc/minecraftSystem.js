@@ -6,8 +6,8 @@ const { PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const { isOwner } = require('../utils/helpers');
-const DataManager = require('../utils/dataManager');
+const { isOwner } = require('../../utils/helpers');
+const DataManager = require('../../utils/dataManager');
 
 const dataManager = new DataManager();
 

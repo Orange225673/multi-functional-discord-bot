@@ -6,7 +6,6 @@ const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const { formatNumber, parseTime, formatTime, isOwner, randomInt } = require('./utils/helpers');
 const DataManager = require('./utils/dataManager');
 const DatabaseManager = require('./utils/DatabaseManager');
-const { Easy, Hard } = require('./systems/mathProblems');
 
 const dataManager = new DataManager();
 const dbManager = new DatabaseManager();
@@ -396,22 +395,22 @@ function setupSlashCommands(client) {
 
             // ============ ECONOMY COMMANDS ============
             else if (commandName === 'gbl') {
-                const economyCommands = require('./commands/economy');
+                const economyCommands = require('./commands/economy/economy');
                 await economyCommands.gamble.execute(interaction, client, client.config);
             }
 
             else if (commandName === 'bal') {
-                const economyCommands = require('./commands/economy');
+                const economyCommands = require('./commands/economy/economy');
                 await economyCommands.balance.execute(interaction, client, client.config);
             }
 
             else if (commandName === 'baltop') {
-                const economyCommands = require('./commands/economy');
+                const economyCommands = require('./commands/economy/economy');
                 await economyCommands.baltop.execute(interaction, client, client.config);
             }
 
             else if (commandName === 'topglobal') {
-                const economyCommands = require('./commands/economy');
+                const economyCommands = require('./commands/economy/economy');
                 await economyCommands.topglobal.execute(interaction, client, client.config);
             }
 
@@ -440,9 +439,9 @@ function setupSlashCommands(client) {
             }
 
             else if (commandName === 'board') {
-                const { getGameByPlayer } = require('./systems/chessManager');
-                const { renderBoard } = require('./systems/boardRenderer');
-                const { formatTime } = require('./systems/chessManager');
+                const { getGameByPlayer } = require('./systems/chessSystems/chessManager');
+                const { renderBoard } = require('./systems/chessSystems/boardRenderer');
+                const { formatTime } = require('./systems/chessSystems/chessManager');
                 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
                 const game = getGameByPlayer(interaction.user.id);
@@ -485,7 +484,7 @@ function setupSlashCommands(client) {
             }
 
             else if (commandName === 'chesstotal') {
-                const { getServerLeaderboard } = require('./systems/chessElo');
+                const { getServerLeaderboard } = require('./systems/chessSystems/chessElo');
                 const leaderboard = getServerLeaderboard(interaction.guild.id, 10);
 
                 if (leaderboard.length === 0) {
@@ -511,7 +510,7 @@ function setupSlashCommands(client) {
             }
 
             else if (commandName === 'chessglobal') {
-                const { getGlobalLeaderboard } = require('./systems/chessElo');
+                const { getGlobalLeaderboard } = require('./systems/chessSystems/chessElo');
                 const leaderboard = getGlobalLeaderboard(10);
 
                 if (leaderboard.length === 0) {
@@ -537,7 +536,7 @@ function setupSlashCommands(client) {
             }
 
             else if (commandName === 'chesselo') {
-                const { getPlayerStats, PROVISIONAL_GAMES } = require('./systems/chessElo');
+                const { getPlayerStats, PROVISIONAL_GAMES } = require('./systems/chessSystems/chessElo');
                 const userId = options.getUser('user')?.id || interaction.user.id;
                 const stats = getPlayerStats(interaction.guild.id, userId);
 
@@ -663,7 +662,7 @@ function setupSlashCommands(client) {
                 }
 
                 const role = options.getRole('role');
-                const PermissionManager = require('./systems/permissionManager');
+                const PermissionManager = require('./systems/moderation/permissionManager');
                 const permManager = new PermissionManager();
 
                 permManager.addWhitelistedRole(interaction.guild.id, role.id);
@@ -676,7 +675,7 @@ function setupSlashCommands(client) {
                 }
 
                 const role = options.getRole('role');
-                const PermissionManager = require('./systems/permissionManager');
+                const PermissionManager = require('./systems/moderation/permissionManager');
                 const permManager = new PermissionManager();
 
                 permManager.removeWhitelistedRole(interaction.guild.id, role.id);
@@ -684,7 +683,7 @@ function setupSlashCommands(client) {
             }
 
             else if (commandName === 'whitelist-list') {
-                const PermissionManager = require('./systems/permissionManager');
+                const PermissionManager = require('./systems/moderation/permissionManager');
                 const permManager = new PermissionManager();
                 const roles = await permManager.listWhitelistedRoles(interaction.guild);
 
@@ -713,34 +712,6 @@ function setupSlashCommands(client) {
 
                 const status = commandStates[command] ? '✅ Enabled' : '❌ Disabled';
                 await interaction.reply(`${status} command: \`${command}\``);
-            }
-
-            else if (commandName === 'command-list') {
-                const commandStates = dataManager.loadFile(interaction.guild.id, 'command_states.json');
-
-                const embed = new EmbedBuilder()
-                    .setTitle('📜 Command Status')
-                    .setColor(0x5865F2);
-
-                let enabled = [];
-                let disabled = [];
-
-                for (const [cmd, state] of Object.entries(commandStates)) {
-                    if (state) {
-                        enabled.push(cmd);
-                    } else {
-                        disabled.push(cmd);
-                    }
-                }
-
-                if (enabled.length > 0) {
-                    embed.addFields({ name: '✅ Enabled', value: enabled.join(', '), inline: false });
-                }
-                if (disabled.length > 0) {
-                    embed.addFields({ name: '❌ Disabled', value: disabled.join(', '), inline: false });
-                }
-
-                await interaction.reply({ embeds: [embed] });
             }
 
             // ============ MATH QUIZ COMMAND ======================
@@ -778,31 +749,31 @@ function setupSlashCommands(client) {
 
             // ============ GEMS COMMAND ============
             else if (commandName === 'gems') {
-                const gemsCommands = require('./commands/gems');
+                const gemsCommands = require('./commands/economy/gems');
                 await gemsCommands.gems.execute(interaction, client, client.config);
             }
 
             // ============ GEMSHOP COMMAND ============
             else if (commandName === 'gemshop') {
-                const gemsCommands = require('./commands/gems');
+                const gemsCommands = require('./commands/economy/gems');
                 await gemsCommands.gemshop.execute(interaction, client, client.config);
             }
 
             // ============ XP COMMAND ============
             else if (commandName === 'xp') {
-                const xpCommands = require('./commands/xp');
+                const xpCommands = require('./commands/economy/xp');
                 await xpCommands.xp.execute(interaction, client, client.config);
             }
 
             // ============ XPTOP COMMAND ============
             else if (commandName === 'xptop') {
-                const xpCommands = require('./commands/xp');
+                const xpCommands = require('./commands/economy/xp');
                 await xpCommands.xptop.execute(interaction, client, client.config);
             }
 
             // ============ XPGLOBAL COMMAND ============
             else if (commandName === 'xpglobal') {
-                const xpCommands = require('./commands/xp');
+                const xpCommands = require('./commands/economy/xp');
                 await xpCommands.xpglobal.execute(interaction, client, client.config);
             }
 

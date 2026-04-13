@@ -2,20 +2,22 @@ const play = require('play-dl');
 const ytdl = require('@distube/ytdl-core');
 const exec = require('youtube-dl-exec');
 const { spawn } = require('child_process');
+const ytdlp = require('yt-dlp-exec');
 const {
     joinVoiceChannel,
     createAudioPlayer,
     createAudioResource,
     AudioPlayerStatus,
     VoiceConnectionStatus,
-    entersState
+    entersState,
+    StreamType
 } = require('@discordjs/voice');
-const fs = require('fs');
-const helpers = require('../helpers');
+const path = require('path');
 
 const queues = new Map();
 const voiceConnecting = new Map();  // Prevent concurrent connection attempts
 const ffmpegProcesses = new Set();  // Track all ffmpeg processes for cleanup
+
 
 async function initializePlayer(client) {
     console.log('✅ play-dl music system initialized');
@@ -201,6 +203,7 @@ async function playNext(queue) {
                                 ffmpegErrorMsg = new Error(`FFmpeg error: ${msg.split('\n')[0]}`);
                                 ffmpegError = ffmpegErrorMsg;
                             }
+                            // console.log(`📡 FFmpeg outputting: ${data.length} bytes`);
                         });
 
                         ffmpegProcess.on('error', (err) => {
@@ -368,11 +371,19 @@ async function playNext(queue) {
                 }
 
                 const resource = createAudioResource(stream, {
-                    inputType: extractionMethod === 3 ? 'raw' : undefined,
+                    inputType: extractionMethod === 3 ? StreamType.Raw : StreamType.Arbitrary,
                     inlineVolume: true
                 });
 
-                resource.volume.setVolume(queue.volume / 100);
+                if (resource.volume) {
+                    resource.volume.setVolume(queue.volume / 100);
+                }
+                queue.player.play(resource);
+                if (queue.connection && !queue.subscribed) {
+                    queue.connection.subscribe(queue.player);
+                    queue.subscribed = true; // Đánh dấu để không subscribe nhiều lần
+                }
+
                 queue.player.play(resource);
                 queue.playing = true;
 
@@ -535,76 +546,90 @@ async function createQueue(message) {
     }
 }
 
+
 async function addSong(message, url) {
     const voiceChannel = message.member.voice.channel;
     if (!voiceChannel) return message.reply('❌ Please join voice channel first!');
-    if (!url || typeof url !== 'string') return message.reply('❌ Invalid URL provided!');
 
     try {
-        console.log(`📥 Fetching info for URL: ${url}`);
+        let queue = await createQueue(message);
+
+        // 1. Join Voice Channel
+        if (!queue.connection) {
+            console.log('🔗 Connecting to Voice Channel...');
+            queue.connection = joinVoiceChannel({
+                channelId: voiceChannel.id,
+                guildId: message.guild.id,
+                adapterCreator: message.guild.voiceAdapterCreator,
+            });
+
+            try {
+                await entersState(queue.connection, VoiceConnectionStatus.Ready, 5_000);
+                console.log('✅ Voice Connection Ready');
+            } catch (connErr) {
+                console.error('❌ Connection Timeout:', connErr);
+                if (queue.connection) queue.connection.destroy();
+                queue.connection = null;
+                return message.reply('❌ Could not connect to voice channel!');
+            }
+        }
+
+        console.log(`📥 Fetching info with yt-dlp: ${url}`);
+        const cookiesPath = path.join(__dirname, '../../cookies.txt');
 
         let track;
-        let streamUrl = url;
-
-        // Normalize URL format
-        if (url.includes('youtu.be/')) {
-            const videoId = url.split('youtu.be/')[1]?.split('?')[0];
-            if (videoId) streamUrl = `https://www.youtube.com/watch?v=${videoId}`;
-        } else if (url.includes('youtube.com') && !url.includes('www.youtube.com')) {
-            streamUrl = url.replace('https://youtube.com', 'https://www.youtube.com');
-        }
-
-        if (url.includes('youtube.com') || url.includes('youtu.be')) {
-            // Get video info from yt-search
-            const ytSearch = require('yt-search');
-            const urlObj = new URL(streamUrl);
-            const videoId = urlObj.searchParams.get("v");
-            const video = await ytSearch({ videoId });
-
-            if (!video) {
-                throw new Error('Video not found on YouTube');
-            }
+        try {
+            // 2. CHỖ SỬA: Dùng yt-dlp với Cookie để lấy metadata
+            const details = await ytdlp(url, {
+                dumpSingleJson: true,
+                noWarnings: true,
+                noCheckCertificates: true,
+                cookies: cookiesPath,
+                addHeader: ['referer:youtube.com', 'user-agent:Mozilla/5.0']
+            });
 
             track = {
-                title: video.title || url,
-                url: streamUrl,
-                duration: video.timestamp || '',
-                channel: video.author?.name || 'Unknown'
+                title: details.title || 'Unknown Title',
+                url: details.webpage_url || url,
+                duration: details.duration_string || '',
+                channel: details.uploader || 'Unknown'
             };
-        } else {
-            // Non-YouTube URL
+        } catch (metadataErr) {
+            // 3. CHIẾN THUẬT BẤT TỬ: Nếu lỗi Metadata (Sign in), vẫn tạo track để phát
+            console.warn('⚠️ Metadata Error (Bot detection?):', metadataErr.message);
             track = {
-                title: url,
-                url: streamUrl,
-                duration: '',
-                channel: 'Unknown'
+                title: "Requested Music (No Metadata)",
+                url: url,
+                duration: '??:??',
+                channel: 'YouTube'
             };
+            message.channel.send('⚠️ Cannot fetch video info, but I will try to play it anyway!');
         }
 
-        if (!track || !track.url) {
-            console.error("❌ Track invalid:", track);
-            return message.reply("❌ Invalid track!");
-        }
-
-        let queue = await createQueue(message);
         queue.tracks.push(track);
-        console.log(`✅ Added song: "${track.title}"`);
-        console.log(`   URL: ${track.url}`);
-        console.log(`   Queue size: ${queue.tracks.length}`);
+        console.log(`✅ Added song: "${track.title}" (Queue: ${queue.tracks.length})`);
 
         if (!queue.playing) {
+            queue.playing = true;
             console.log('▶️ Starting playback...');
-            await playNext(queue);
+            // Đảm bảo playNext dùng youtube-dl-exec hoặc yt-dlp để lấy stream
+            await playNext(queue).catch(err => {
+                console.error('❌ PlayNext Error:', err);
+                queue.playing = false;
+            });
         }
 
         return track;
+
     } catch (err) {
-        console.error('❌ Failed to add song:', err.message);
-        console.error(`   URL: ${url}`);
-        message.reply('❌ Unable to play this music source. Try a different link or search result.');
+        console.error('❌ Critical Error in addSong:', err);
+        message.reply('❌ Bot encountered an error while processing.');
         return null;
     }
 }
+
+
+
 
 function skip(guildId) {
     const queue = queues.get(guildId);

@@ -2,11 +2,10 @@
   "name": "discord-bot-nodejs",
   "version": "1.0.9",
   "description": "Multi-Server Discord Bot with Giveaways, Economy, Math, Polls, and more...",
-  "main": "main.js",
+  "main": "src/index.js",
   "scripts": {
-    "start": "node main.js",
-    "dev": "nodemon main.js",
-    "direct": "node src/index.js"
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
   },
   "keywords": [
     "discord",
@@ -32,13 +31,12 @@
     "@discordjs/builders": "^1.8.2",
     "@discordjs/formatters": "^0.4.0",
     "@discordjs/rest": "^2.3.0",
-    "@discordjs/util": "^1.1.0",
     "@discordjs/voice": "^0.19.2",
     "@distube/ytdl-core": "^4.16.12",
     "@google/generative-ai": "^0.24.1",
     "@napi-rs/canvas": "^0.1.88",
     "better-sqlite3": "^12.8.0",
-    "chess.js": "^1.0.0-beta.8",
+    "chess.js": "^1.4.0",
     "discord-api-types": "^0.38.0",
     "discord-player": "^7.2.0",
     "discord.js": "^14.26.2",
@@ -51,8 +49,7 @@
     "play-dl": "^1.9.7",
     "prompt-sync": "^4.2.0",
     "undici": "^6.0.0",
-    "youtube-dl-exec": "^3.1.4",
-    "yt-search": "^2.13.1"
+    "yt-dlp-exec": "^1.0.2"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

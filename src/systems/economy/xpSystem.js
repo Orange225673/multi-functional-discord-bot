@@ -2,7 +2,7 @@
 //                   XP SYSTEM - MESSAGE XP GAIN
 //======================================================================
 
-const DatabaseManager = require('../utils/DatabaseManager');
+const DatabaseManager = require('../../utils/DatabaseManager');
 const { EmbedBuilder } = require('discord.js');
 
 const dbManager = new DatabaseManager();
@@ -30,7 +30,15 @@ async function onMessageXPGain(message, client) {
 
     // Check if XP is enabled for this server
     const config = dbManager.getServerConfig(message.guild.id);
-    if (!config.xp_enabled) return;
+
+    // ✅ FIXED: Use correct variables
+    if (!config) {
+        const db = dbManager.db;
+        db.prepare('INSERT OR IGNORE INTO xp_config (server_id, xp_enabled) VALUES (?, 1)').run(message.guild.id);
+        return;
+    }
+
+    const isEnabled = config.xp_enabled;
 
     // Check cooldown
     const cooldownKey = `${message.guild.id}-${message.author.id}`;

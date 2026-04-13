@@ -4,7 +4,7 @@ chcp 65001 > nul
 echo Starting Discord Bot...
 echo.
 
-node main
+npm start
 
 if %errorlevel% neq 0 (
     echo Error detected.

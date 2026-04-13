@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const mathSystem = require('../../systems/mathSystem');
-const { Easy, Hard, Extreme } = require('../../systems/mathProblems');
+const mathSystem = require('../../systems/math/mathSystem');
+const { Easy, Hard, Extreme } = require('../../systems/math/mathProblems');
 const { createTimestamp } = require('../../utils/timestampHelper');
 const config = require('../../config');
 

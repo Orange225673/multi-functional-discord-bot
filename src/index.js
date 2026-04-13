@@ -16,7 +16,9 @@
 // Main import
 require('dotenv').config();
 const { Client, GatewayIntentBits, Collection, ActivityType, EmbedBuilder } = require('discord.js');
-
+const fs = require('fs');
+const path = require('path');
+const { exec } = require('child_process');
 
 // Import configs
 const config = require('./config');
@@ -26,11 +28,11 @@ const { setupSlashCommands } = require('./slashHandler');
 const { deployCommands } = require('./deployCommands');
 
 // Import systems
-const economySystem = require('./systems/economySystem');
-const mathSystem = require('./systems/mathSystem');
-const pollSystem = require('./systems/pollSystem');
-const reminderSystem = require('./systems/reminderSystem');
-const xpSystem = require('./systems/xpSystem');
+const economySystem = require('./systems/economy/economySystem');
+const mathSystem = require('./systems/math/mathSystem');
+const pollSystem = require('./systems/misc/pollSystem');
+const reminderSystem = require('./systems/misc/reminderSystem');
+const xpSystem = require('./systems/economy/xpSystem');
 const helpers = require('./utils/helpers');
 
 // Import command
@@ -390,6 +392,7 @@ const startBot = () => {
         }
     }, 1000);
 };
+
 
 startBot();
 

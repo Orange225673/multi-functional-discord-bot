@@ -41,7 +41,7 @@ class CodeValidator {
                 /\b(vm|vm2|isolated-vm)\b/gi,       // Escaping: Prevents sandbox escapes
                 /\b(worker_threads|cluster)\b/gi,   // Resource Exhaustion: Prevents lag
                 /\b(socket|urllib|requests)\b/gi,   // Python Networking
-                /\b(pathlib|shutil|open)\b/gi   ,    // File System (Python alternatives)
+                /\b(pathlib|shutil|open)\b/gi,    // File System (Python alternatives)
                 /\bexec\b/gi,             // exec function
                 /\beval\b/gi,             // eval function
                 /\brequire\s*\(\s*['"]fs['"]\s*\)/gi, // Node fs module
@@ -53,7 +53,7 @@ class CodeValidator {
                 /\b(requests|urllib|socket|asyncio)\b/gi, // Network/Internet access
                 /\b(pickle|marshal|dbm)\b/gi, // Can execute code during 'unpickling' data
                 /\b(sys\.(modules|argv|exit|path))\b/gi, // Internal system state
-                /\b(threading|multiprocessing|asyncio)\b/gi ,
+                /\b(threading|multiprocessing|asyncio)\b/gi,
                 /\bgetattr\b/gi,
                 /\bsetattr\b/gi,
                 /\.constructor\b/gi,
@@ -116,22 +116,10 @@ class CodeValidator {
     validateSleepCalls(code, language) {
         let sleepPatterns = [];
         let maxSleep = 5; // 5 seconds
-
-        if (language.toLowerCase() === 'python') {
-            // Python: time.sleep(seconds)
-            sleepPatterns = [
-                { regex: /time\.sleep\s*\(\s*([\d.]+)\s*\)/g, unit: 'seconds' },
-                { regex: /sleep\s*\(\s*([\d.]+)\s*\)/g, unit: 'seconds' }
-            ];
-        } else if (language.toLowerCase() === 'javascript') {
+        if (language.toLowerCase() === 'javascript') {
             // JavaScript: setTimeout(fn, milliseconds) and Thread.sleep (Rhino)
             sleepPatterns = [
                 { regex: /setTimeout\s*\(\s*[^,]*,\s*([\d.]+)\s*\)/g, unit: 'milliseconds' },
-                { regex: /Thread\.sleep\s*\(\s*([\d.]+)\s*\)/g, unit: 'milliseconds' }
-            ];
-        } else if (language.toLowerCase() === 'java') {
-            // Java: Thread.sleep(milliseconds)
-            sleepPatterns = [
                 { regex: /Thread\.sleep\s*\(\s*([\d.]+)\s*\)/g, unit: 'milliseconds' }
             ];
         }

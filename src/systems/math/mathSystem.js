@@ -3,7 +3,7 @@
 ///////////////////////////////////////////////////////////////////////
 
 const { EmbedBuilder } = require('discord.js');
-const DatabaseManager = require('../utils/DatabaseManager');
+const DatabaseManager = require('../../utils/DatabaseManager');
 
 const dbManager = new DatabaseManager();
 const activePlayers = new Map(); // { userId: points }
